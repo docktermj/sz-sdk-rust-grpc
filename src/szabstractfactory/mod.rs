@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use sz_sdk::{SzConfigManager, SzDiagnostic, SzEngine, SzError, SzProduct};
 use tonic::transport::Channel;
 
