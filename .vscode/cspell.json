@@ -1,0 +1,15 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "szconfig",
+    "szconfigmanager",
+    "szdiagnostic",
+    "szengine",
+    "szproduct",
+    "wraperror"
+  ],
+  "ignorePaths": [
+    "Makefile"
+  ]
+}
