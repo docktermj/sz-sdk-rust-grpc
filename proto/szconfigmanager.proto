@@ -1,0 +1,74 @@
+syntax = "proto3";
+package szconfigmanager;
+
+option go_package = "github.com/senzing-garage/sz-sdk-go-grpc/szconfigmanager";
+option java_package = "com.senzing.sdk.grpc.proto";
+option java_outer_classname = "SzConfigManagerProto";
+
+service SzConfigManager {
+  rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {}
+  rpc GetConfigRegistry (GetConfigRegistryRequest) returns (GetConfigRegistryResponse) {}
+  rpc GetDefaultConfigId (GetDefaultConfigIdRequest) returns (GetDefaultConfigIdResponse) {}
+  rpc GetTemplateConfig (GetTemplateConfigRequest) returns (GetTemplateConfigResponse) {}
+  rpc RegisterConfig (RegisterConfigRequest) returns (RegisterConfigResponse) {}
+  rpc ReplaceDefaultConfigId (ReplaceDefaultConfigIdRequest) returns (ReplaceDefaultConfigIdResponse) {}
+  rpc SetDefaultConfig (SetDefaultConfigRequest) returns (SetDefaultConfigResponse) {}
+  rpc SetDefaultConfigId (SetDefaultConfigIdRequest) returns (SetDefaultConfigIdResponse) {}
+}
+
+message GetConfigRequest {
+  int64 config_id = 1;
+}
+
+message GetConfigResponse {
+  string result = 1;
+}
+
+message GetConfigRegistryRequest {}
+
+message GetConfigRegistryResponse {
+  string result = 1;
+}
+
+message GetDefaultConfigIdRequest {}
+
+message GetDefaultConfigIdResponse {
+  int64 result = 1;
+}
+
+message GetTemplateConfigRequest {}
+
+message GetTemplateConfigResponse {
+  string result = 1;
+}
+
+message RegisterConfigRequest {
+  string config_definition = 1;
+  string config_comment = 2;
+}
+
+message RegisterConfigResponse {
+  int64 result = 1;
+}
+
+message ReplaceDefaultConfigIdRequest {
+  int64 current_default_config_id = 1;
+  int64 new_default_config_id = 2;
+}
+
+message ReplaceDefaultConfigIdResponse {}
+
+message SetDefaultConfigRequest {
+  string config_definition = 1;
+  string config_comment = 2;
+}
+
+message SetDefaultConfigResponse {
+  int64 result = 1;
+}
+
+message SetDefaultConfigIdRequest {
+  int64 config_id = 1;
+}
+
+message SetDefaultConfigIdResponse {}

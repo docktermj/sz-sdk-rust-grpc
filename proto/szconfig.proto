@@ -1,0 +1,49 @@
+syntax = "proto3";
+package szconfig;
+
+option go_package = "github.com/senzing-garage/sz-sdk-go-grpc/szconfig";
+option java_package = "com.senzing.sdk.grpc.proto";
+option java_outer_classname = "SzConfigProto";
+
+service SzConfig {
+  rpc GetDataSourceRegistry (GetDataSourceRegistryRequest) returns (GetDataSourceRegistryResponse) {}
+  rpc RegisterDataSource (RegisterDataSourceRequest) returns (RegisterDataSourceResponse) {}
+  rpc UnregisterDataSource (UnregisterDataSourceRequest) returns (UnregisterDataSourceResponse) {}
+  rpc VerifyConfig (VerifyConfigRequest) returns (VerifyConfigResponse) {}
+}
+
+message GetDataSourceRegistryRequest {
+  string config_definition = 1;
+}
+
+message GetDataSourceRegistryResponse {
+  string result = 1;
+}
+
+message RegisterDataSourceRequest {
+  string config_definition = 1;
+  string data_source_code = 2;
+}
+
+message RegisterDataSourceResponse {
+  string result = 1;
+  string config_definition = 2;
+}
+
+message UnregisterDataSourceRequest {
+  string config_definition = 1;
+  string data_source_code = 2;
+}
+
+message UnregisterDataSourceResponse {
+  string result = 1;
+  string config_definition = 2;
+}
+
+message VerifyConfigRequest {
+  string config_definition = 1;
+}
+
+message VerifyConfigResponse {
+  bool result = 1;
+}

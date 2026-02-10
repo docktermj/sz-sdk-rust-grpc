@@ -1,0 +1,354 @@
+syntax = "proto3";
+package szengine;
+
+option go_package = "github.com/senzing-garage/sz-sdk-go-grpc/szengine";
+option java_package = "com.senzing.sdk.grpc.proto";
+option java_outer_classname = "SzEngineProto";
+
+service SzEngine {
+  rpc AddRecord(AddRecordRequest) returns (AddRecordResponse) {}
+  rpc CloseExportReport(CloseExportReportRequest) returns (CloseExportReportResponse) {}
+  rpc CountRedoRecords(CountRedoRecordsRequest) returns (CountRedoRecordsResponse) {}
+  rpc DeleteRecord(DeleteRecordRequest) returns (DeleteRecordResponse) {}
+  rpc ExportCsvEntityReport(ExportCsvEntityReportRequest) returns (ExportCsvEntityReportResponse) {}
+  rpc ExportJsonEntityReport(ExportJsonEntityReportRequest) returns (ExportJsonEntityReportResponse) {}
+  rpc FetchNext(FetchNextRequest) returns (FetchNextResponse) {}
+  rpc FindInterestingEntitiesByEntityId(FindInterestingEntitiesByEntityIdRequest) returns (FindInterestingEntitiesByEntityIdResponse) {}
+  rpc FindInterestingEntitiesByRecordId(FindInterestingEntitiesByRecordIdRequest) returns (FindInterestingEntitiesByRecordIdResponse) {}
+  rpc FindNetworkByEntityId(FindNetworkByEntityIdRequest) returns (FindNetworkByEntityIdResponse) {}
+  rpc FindNetworkByRecordId(FindNetworkByRecordIdRequest) returns (FindNetworkByRecordIdResponse) {}
+  rpc FindPathByEntityId(FindPathByEntityIdRequest) returns (FindPathByEntityIdResponse) {}
+  rpc FindPathByRecordId(FindPathByRecordIdRequest) returns (FindPathByRecordIdResponse) {}
+  rpc GetActiveConfigId(GetActiveConfigIdRequest) returns (GetActiveConfigIdResponse) {}
+  rpc GetEntityByEntityId(GetEntityByEntityIdRequest) returns (GetEntityByEntityIdResponse) {}
+  rpc GetEntityByRecordId(GetEntityByRecordIdRequest) returns (GetEntityByRecordIdResponse) {}
+  rpc GetRecord(GetRecordRequest) returns (GetRecordResponse) {}
+  rpc GetRecordPreview(GetRecordPreviewRequest) returns (GetRecordPreviewResponse) {}
+  rpc GetRedoRecord(GetRedoRecordRequest) returns (GetRedoRecordResponse) {}
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse) {}
+  rpc GetVirtualEntityByRecordId(GetVirtualEntityByRecordIdRequest) returns (GetVirtualEntityByRecordIdResponse) {}
+  rpc HowEntityByEntityId(HowEntityByEntityIdRequest) returns (HowEntityByEntityIdResponse) {}
+  rpc PrimeEngine(PrimeEngineRequest) returns (PrimeEngineResponse) {}
+  rpc ProcessRedoRecord(ProcessRedoRecordRequest) returns (ProcessRedoRecordResponse) {}
+  rpc ReevaluateEntity(ReevaluateEntityRequest) returns (ReevaluateEntityResponse) {}
+  rpc ReevaluateRecord(ReevaluateRecordRequest) returns (ReevaluateRecordResponse) {}
+  rpc Reinitialize (ReinitializeRequest) returns (ReinitializeResponse) {}
+  rpc SearchByAttributes(SearchByAttributesRequest) returns (SearchByAttributesResponse) {}
+  rpc StreamExportCsvEntityReport(StreamExportCsvEntityReportRequest) returns (stream StreamExportCsvEntityReportResponse) {}
+  rpc StreamExportJsonEntityReport(StreamExportJsonEntityReportRequest) returns (stream StreamExportJsonEntityReportResponse) {}
+  rpc WhyEntities(WhyEntitiesRequest) returns (WhyEntitiesResponse) {}
+  rpc WhyRecordInEntity(WhyRecordInEntityRequest) returns (WhyRecordInEntityResponse) {}
+  rpc WhyRecords(WhyRecordsRequest) returns (WhyRecordsResponse) {}
+  rpc WhySearch(WhySearchRequest) returns (WhySearchResponse) {}
+}
+
+message AddRecordRequest {
+  string data_source_code = 1;
+  string record_id = 2;
+  string record_definition = 3;
+  int64 flags = 4;
+}
+
+message AddRecordResponse {
+  string result = 1;
+}
+
+message CloseExportReportRequest {
+  int64 export_handle = 1;
+}
+
+message CloseExportReportResponse {}
+
+message CountRedoRecordsRequest {}
+
+message CountRedoRecordsResponse {
+  int64 result = 1;
+}
+
+message DeleteRecordRequest {
+  string data_source_code = 1;
+  string record_id = 2;
+  int64 flags = 3;
+}
+
+message DeleteRecordResponse {
+  string result = 1;
+}
+
+message ExportCsvEntityReportRequest {
+  string csv_column_list = 1;
+  int64 flags = 2;
+}
+
+message ExportCsvEntityReportResponse {
+  int64 result = 1;
+}
+
+message ExportJsonEntityReportRequest {
+  int64 flags = 1;
+}
+
+message ExportJsonEntityReportResponse {
+  int64 result = 1;
+}
+
+message FetchNextRequest {
+  int64 export_handle = 1;
+}
+
+message FetchNextResponse {
+  string result = 1;
+}
+
+message FindInterestingEntitiesByEntityIdRequest {
+  int64 entity_id = 1;
+  int64 flags = 2;
+}
+
+message FindInterestingEntitiesByEntityIdResponse {
+  string result = 1;
+}
+
+message FindInterestingEntitiesByRecordIdRequest {
+  string data_source_code = 1;
+  string record_id = 2;
+  int64 flags = 3;
+}
+
+message FindInterestingEntitiesByRecordIdResponse {
+  string result = 1;
+}
+
+message FindNetworkByEntityIdRequest {
+  string entity_ids = 1;
+  int64 max_degrees = 2;
+  int64 build_out_degrees = 3;
+  int64 build_out_max_entities = 4;
+  int64 flags = 5;
+}
+
+message FindNetworkByEntityIdResponse {
+  string result = 1;
+}
+
+message FindNetworkByRecordIdRequest {
+  string record_keys = 1;
+  int64 max_degrees = 2;
+  int64 build_out_degrees = 3;
+  int64 build_out_max_entities = 4;
+  int64 flags = 5;
+}
+
+message FindNetworkByRecordIdResponse {
+  string result = 1;
+}
+
+message FindPathByEntityIdRequest {
+  int64 start_entity_id = 1;
+  int64 end_entity_id = 2;
+  int64 max_degrees = 3;
+  string avoid_entity_ids = 4;
+  string required_data_sources = 5;
+  int64 flags = 6;
+}
+
+message FindPathByEntityIdResponse {
+  string result = 1;
+}
+
+message FindPathByRecordIdRequest {
+  string start_data_source_code = 1;
+  string start_record_id = 2;
+  string end_data_source_code = 3;
+  string end_record_id = 4;
+  int64 max_degrees = 5;
+  string avoid_record_keys = 6;
+  string required_data_sources = 7;
+  int64 flags = 8;
+}
+
+message FindPathByRecordIdResponse {
+  string result = 1;
+}
+
+message GetActiveConfigIdRequest {}
+
+message GetActiveConfigIdResponse {
+  int64 result = 1;
+}
+
+message GetEntityByEntityIdRequest {
+  int64 entity_id = 1;
+  int64 flags = 2;
+}
+
+message GetEntityByEntityIdResponse {
+  string result = 1;
+}
+
+message GetEntityByRecordIdRequest {
+  string data_source_code = 1;
+  string record_id = 2;
+  int64 flags = 3;
+}
+
+message GetEntityByRecordIdResponse {
+  string result = 1;
+}
+
+message GetRecordPreviewRequest {
+  string record_definition = 1;
+  int64 flags = 2;
+}
+
+message GetRecordPreviewResponse {
+  string result = 1;
+}
+
+message GetRecordRequest {
+  string data_source_code = 1;
+  string record_id = 2;
+  int64 flags = 3;
+}
+
+message GetRecordResponse {
+  string result = 1;
+}
+
+message GetRedoRecordRequest {}
+
+message GetRedoRecordResponse {
+  string result = 1;
+}
+
+message GetStatsRequest {}
+
+message GetStatsResponse {
+  string result = 1;
+}
+
+message GetVirtualEntityByRecordIdRequest {
+  string record_keys = 1;
+  int64 flags = 2;
+}
+
+message GetVirtualEntityByRecordIdResponse {
+  string result = 1;
+}
+
+message HowEntityByEntityIdRequest {
+  int64 entity_id = 1;
+  int64 flags = 2;
+}
+
+message HowEntityByEntityIdResponse {
+  string result = 1;
+}
+
+message PrimeEngineRequest {}
+
+message PrimeEngineResponse {}
+
+message ProcessRedoRecordRequest {
+  string redo_record = 1;
+  int64 flags = 2;
+}
+
+message ProcessRedoRecordResponse {
+  string result = 1;
+}
+
+message ReevaluateEntityRequest {
+  int64 entity_id = 1;
+  int64 flags = 2;
+}
+
+message ReevaluateEntityResponse {
+  string result = 1;
+}
+
+message ReevaluateRecordRequest {
+  string data_source_code = 1;
+  string record_id = 2;
+  int64 flags = 3;
+}
+
+message ReevaluateRecordResponse {
+  string result = 1;
+}
+
+message ReinitializeRequest {
+  int64 config_id = 1;
+}
+
+message ReinitializeResponse {}
+
+message SearchByAttributesRequest {
+  string attributes = 1;
+  string search_profile = 2;
+  int64 flags = 3;
+}
+
+message SearchByAttributesResponse {
+  string result = 1;
+}
+
+message StreamExportCsvEntityReportRequest {
+  string csv_column_list = 1;
+  int64 flags = 2;
+}
+
+message StreamExportCsvEntityReportResponse {
+  string result = 1;
+}
+
+message StreamExportJsonEntityReportRequest {
+  int64 flags = 1;
+}
+
+message StreamExportJsonEntityReportResponse {
+  string result = 1;
+}
+
+message WhyEntitiesRequest {
+  int64 entity_id_1 = 1;
+  int64 entity_id_2 = 2;
+  int64 flags = 3;
+}
+
+message WhyEntitiesResponse {
+  string result = 1;
+}
+
+message WhyRecordInEntityRequest {
+  string data_source_code = 1;
+  string record_id = 2;
+  int64 flags = 3;
+}
+
+message WhyRecordInEntityResponse {
+  string result = 1;
+}
+
+message WhyRecordsRequest {
+  string data_source_code_1 = 1;
+  string record_id_1 = 2;
+  string data_source_code_2 = 3;
+  string record_id_2 = 4;
+  int64 flags = 5;
+}
+
+message WhyRecordsResponse {
+  string result = 1;
+}
+
+message WhySearchRequest {
+  string attributes = 1;
+  int64 entity_id = 2;
+  string search_profile = 3;
+  int64 flags = 4;
+}
+
+message WhySearchResponse {
+  string result = 1;
+}
