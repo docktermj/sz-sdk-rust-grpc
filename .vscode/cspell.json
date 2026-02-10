@@ -2,6 +2,12 @@
   "version": "0.2",
   "language": "en",
   "words": [
+    "clippy",
+    "cloneable",
+    "protos",
+    "Senzing",
+    "statefulness",
+    "szabstractfactory",
     "szconfig",
     "szconfigmanager",
     "szdiagnostic",
@@ -10,6 +16,15 @@
     "wraperror"
   ],
   "ignorePaths": [
-    "Makefile"
+    ".git/*",
+    ".gitignore",
+    ".history/*",
+    "**/*.toml",
+    "cspell.json",
+    "Makefile",
+    "makefiles",
+    "proto/*",
+    "settings.local.json",
+    "target/*"
   ]
 }

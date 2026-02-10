@@ -23,20 +23,19 @@ BUILD_VERSION := $(shell git describe --always --tags --abbrev=0 --dirty 2>/dev/
 default: help
 
 # -----------------------------------------------------------------------------
-# Build
+# Operating System / Architecture targets
 # -----------------------------------------------------------------------------
 
-.PHONY: build
-build:
-	@cargo build
+# -include makefiles/$(OSTYPE).mk
+# -include makefiles/$(OSTYPE)_$(OSARCH).mk
 
 # -----------------------------------------------------------------------------
-# Test
+# Dependency management
 # -----------------------------------------------------------------------------
 
-.PHONY: test
-test:
-	@cargo test -- --show-output
+.PHONY: dependencies
+dependencies:
+	@cargo update
 
 # -----------------------------------------------------------------------------
 # Setup - start a Senzing gRPC server for testing
@@ -93,7 +92,7 @@ setup-server-side-tls:
 # -----------------------------------------------------------------------------
 
 .PHONY: lint
-lint:
+lint: cspell
 	@cargo clippy -- -D warnings
 
 .PHONY: fmt
@@ -103,6 +102,43 @@ fmt:
 .PHONY: fmt-check
 fmt-check:
 	@cargo fmt -- --check
+
+# -----------------------------------------------------------------------------
+# Build
+# -----------------------------------------------------------------------------
+
+.PHONY: build
+build:
+	@cargo build
+
+# -----------------------------------------------------------------------------
+# Run
+# -----------------------------------------------------------------------------
+
+# .PHONY: run
+# run: run-osarch-specific
+
+# -----------------------------------------------------------------------------
+# Test
+# -----------------------------------------------------------------------------
+
+.PHONY: test
+test:
+	@cargo test -- --show-output
+
+# -----------------------------------------------------------------------------
+# Coverage
+# -----------------------------------------------------------------------------
+
+# .PHONY: coverage
+# coverage: coverage-osarch-specific
+
+# -----------------------------------------------------------------------------
+# Documentation
+# -----------------------------------------------------------------------------
+
+# .PHONY: documentation
+# documentation: documentation-osarch-specific
 
 # -----------------------------------------------------------------------------
 # Clean
@@ -121,3 +157,17 @@ help:
 	$(info Build $(PROGRAM_NAME) version $(BUILD_VERSION))
 	$(info Makefile targets:)
 	@$(MAKE) -pRrq -f $(firstword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$$@$$' | xargs
+
+.PHONY: print-make-variables
+print-make-variables:
+	@$(foreach V,$(sort $(.VARIABLES)), \
+		$(if $(filter-out environment% default automatic, \
+		$(origin $V)),$(info $V=$($V) ($(value $V)))))
+
+# -----------------------------------------------------------------------------
+# Specific programs
+# -----------------------------------------------------------------------------
+
+.PHONY: cspell
+cspell:
+	@cspell lint --dot .

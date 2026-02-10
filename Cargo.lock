@@ -905,7 +905,6 @@ checksum = "0bf256ce5efdfa370213c1dabab5935a12e49f2c58d15e9eac2870d3b4f27263"
 [[package]]
 name = "sz-sdk"
 version = "0.1.0"
-source = "git+https://github.com/docktermj/sz-sdk-rust.git?branch=1-docktermj-1#a2a8b6c9c56525da9b4ad5bf260bb541de187f03"
 dependencies = [
  "thiserror",
 ]

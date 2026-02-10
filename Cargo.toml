@@ -17,3 +17,6 @@ serde_json = "1"
 
 [build-dependencies]
 tonic-build = "0.12"
+
+[patch."https://github.com/docktermj/sz-sdk-rust.git"]
+sz-sdk = { path = "../sz-sdk-rust" }
