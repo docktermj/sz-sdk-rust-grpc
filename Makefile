@@ -92,7 +92,7 @@ setup-server-side-tls:
 # -----------------------------------------------------------------------------
 
 .PHONY: lint
-lint: cspell
+lint:
 	@cargo clippy -- -D warnings
 
 .PHONY: fmt

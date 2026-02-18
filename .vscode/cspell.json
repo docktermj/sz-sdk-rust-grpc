@@ -13,6 +13,9 @@
     "szdiagnostic",
     "szengine",
     "szproduct",
+    "Truthset",
+    "UNREG",
+    "WATCHLIST",
     "wraperror"
   ],
   "ignorePaths": [

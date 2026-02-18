@@ -1,4 +1,5 @@
 use super::*;
+use serial_test::serial;
 use sz_sdk::SzProduct;
 
 const GRPC_URL: &str = "http://localhost:8261";
@@ -28,22 +29,27 @@ fn get_szproduct() -> SzProductGrpc {
 // ------------------------------------------------------------------------
 
 #[test]
+#[serial]
 fn test_destroy() {
     let mut product = get_szproduct();
     let result = product.destroy();
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{}", result.as_ref().err().unwrap());
 }
 
 #[test]
+#[serial]
 fn test_get_license() {
     let product = get_szproduct();
     let result = product.get_license();
-    assert!(result.is_ok_and(is_valid_json));
+    assert!(result.is_ok(), "{}", result.as_ref().err().unwrap());
+    assert!(is_valid_json(result.unwrap()));
 }
 
 #[test]
+#[serial]
 fn test_get_version() {
     let product = get_szproduct();
     let result = product.get_version();
-    assert!(result.is_ok_and(is_valid_json));
+    assert!(result.is_ok(), "{}", result.as_ref().err().unwrap());
+    assert!(is_valid_json(result.unwrap()));
 }

@@ -20,6 +20,7 @@ use crate::szproduct::SzProductGrpc;
 /// pool of HTTP/2 connections).
 pub struct SzAbstractFactoryGrpc {
     channel: Channel,
+    closed: bool,
 }
 
 impl SzAbstractFactoryGrpc {
@@ -30,9 +31,9 @@ impl SzAbstractFactoryGrpc {
     /// ```no_run
     /// use sz_sdk_rust_grpc::SzAbstractFactoryGrpc;
     ///
-    /// let factory = SzAbstractFactoryGrpc::new("http://localhost:8261").unwrap();
+    /// let factory = SzAbstractFactoryGrpc::new_from_url("http://localhost:8261").unwrap();
     /// ```
-    pub fn new(grpc_url: &str) -> Result<Self, SzError> {
+    pub fn new_from_url(grpc_url: &str) -> Result<Self, SzError> {
         let channel = runtime().block_on(async {
             Channel::from_shared(grpc_url.to_string())
                 .map_err(|e| SzError::General {
@@ -46,39 +47,59 @@ impl SzAbstractFactoryGrpc {
                     message: format!("failed to connect to gRPC server: {e}"),
                 })
         })?;
-        Ok(Self { channel })
+        Ok(Self {
+            channel,
+            closed: false,
+        })
     }
 
     /// Creates a new factory from an existing channel.
-    pub fn from_channel(channel: Channel) -> Self {
-        Self { channel }
+    pub fn new_from_channel(channel: Channel) -> Self {
+        Self {
+            channel,
+            closed: false,
+        }
+    }
+
+    fn check_closed(&self) -> Result<(), SzError> {
+        if self.closed {
+            return Err(SzError::NotInitialized {
+                code: 0,
+                message: "SzAbstractFactory has been closed".to_string(),
+            });
+        }
+        Ok(())
     }
 }
 
 impl sz_sdk::SzAbstractFactory for SzAbstractFactoryGrpc {
     fn close(&mut self) -> Result<(), SzError> {
-        // No-op: the gRPC channel is reference-counted and will be
-        // dropped when the last client goes out of scope.
+        self.closed = true;
         Ok(())
     }
 
     fn create_config_manager(&self) -> Result<Box<dyn SzConfigManager>, SzError> {
+        self.check_closed()?;
         Ok(Box::new(SzConfigManagerGrpc::new(self.channel.clone())))
     }
 
     fn create_diagnostic(&self) -> Result<Box<dyn SzDiagnostic>, SzError> {
+        self.check_closed()?;
         Ok(Box::new(SzDiagnosticGrpc::new(self.channel.clone())))
     }
 
     fn create_engine(&self) -> Result<Box<dyn SzEngine>, SzError> {
+        self.check_closed()?;
         Ok(Box::new(SzEngineGrpc::new(self.channel.clone())))
     }
 
     fn create_product(&self) -> Result<Box<dyn SzProduct>, SzError> {
+        self.check_closed()?;
         Ok(Box::new(SzProductGrpc::new(self.channel.clone())))
     }
 
     fn reinitialize(&mut self, config_id: i64) -> Result<(), SzError> {
+        self.check_closed()?;
         let mut diag_client = SzDiagnosticClient::new(self.channel.clone());
         runtime()
             .block_on(async {

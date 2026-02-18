@@ -20,3 +20,7 @@ tonic-build = "0.12"
 
 [patch."https://github.com/docktermj/sz-sdk-rust.git"]
 sz-sdk = { path = "../sz-sdk-rust" }
+
+[dev-dependencies]
+ctor = "0.6.3"
+serial_test = "3.3.1"

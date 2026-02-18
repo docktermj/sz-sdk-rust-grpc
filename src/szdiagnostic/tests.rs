@@ -1,4 +1,5 @@
 use super::*;
+use serial_test::serial;
 use sz_sdk::SzDiagnostic;
 
 const GRPC_URL: &str = "http://localhost:8261";
@@ -28,20 +29,24 @@ fn get_szdiagnostic() -> SzDiagnosticGrpc {
 // ------------------------------------------------------------------------
 
 #[test]
+#[serial]
 fn test_destroy() {
     let mut diagnostic = get_szdiagnostic();
     let result = diagnostic.destroy();
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{}", result.as_ref().err().unwrap());
 }
 
 #[test]
+#[serial]
 fn test_check_repository_performance() {
     let diagnostic = get_szdiagnostic();
     let result = diagnostic.check_repository_performance(5);
-    assert!(result.is_ok_and(is_valid_json));
+    assert!(result.is_ok(), "{}", result.as_ref().err().unwrap());
+    assert!(is_valid_json(result.unwrap()));
 }
 
 #[test]
+#[serial]
 fn test_get_feature() {
     let diagnostic = get_szdiagnostic();
     let result = diagnostic.get_feature(1);
@@ -52,15 +57,18 @@ fn test_get_feature() {
 }
 
 #[test]
+#[serial]
 fn test_get_repository_info() {
     let diagnostic = get_szdiagnostic();
     let result = diagnostic.get_repository_info();
-    assert!(result.is_ok_and(is_valid_json));
+    assert!(result.is_ok(), "{}", result.as_ref().err().unwrap());
+    assert!(is_valid_json(result.unwrap()));
 }
 
 #[test]
+#[serial]
 fn test_purge_repository() {
     let mut diagnostic = get_szdiagnostic();
     let result = diagnostic.purge_repository();
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "{}", result.as_ref().err().unwrap());
 }
