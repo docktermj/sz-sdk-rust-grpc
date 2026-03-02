@@ -4,7 +4,9 @@
   "words": [
     "clippy",
     "cloneable",
+    "keepalive",
     "protos",
+    "SENZ",
     "Senzing",
     "statefulness",
     "szabstractfactory",
@@ -12,11 +14,14 @@
     "szconfigmanager",
     "szdiagnostic",
     "szengine",
+    "szerrortypes",
     "szproduct",
+    "SZSDK",
     "Truthset",
     "UNREG",
     "WATCHLIST",
-    "wraperror"
+    "wraperror",
+    "Zxxxx"
   ],
   "ignorePaths": [
     ".git/*",

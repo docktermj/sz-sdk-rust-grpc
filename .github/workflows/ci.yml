@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Check formatting
+        run: cargo fmt -- --check
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+      - name: Clippy (serde feature)
+        run: cargo clippy --features serde -- -D warnings
+      - name: Clippy (tracing feature)
+        run: cargo clippy --features tracing -- -D warnings
+      - name: Clippy (all features)
+        run: cargo clippy --all-features -- -D warnings
+      - name: Build (no default features)
+        run: cargo build --no-default-features
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      senzing-grpc:
+        image: senzing/serve-grpc
+        ports:
+          - 8261:8261
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run tests
+        run: cargo test
+        env:
+          SENZING_GRPC_URL: "http://localhost:8261"
+
+  msrv:
+    name: MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.75"
+      - uses: Swatinem/rust-cache@v2
+      - name: Build (MSRV check)
+        run: cargo check
+
+  doc:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build docs
+        run: cargo doc --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings

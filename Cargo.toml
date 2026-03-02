@@ -2,18 +2,31 @@
 name = "sz-sdk-rust-grpc"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.75"
 license = "Apache-2.0"
 description = "Rust gRPC implementation of the Senzing SDK traits"
 repository = "https://github.com/docktermj/sz-sdk-rust-grpc"
+homepage = "https://github.com/docktermj/sz-sdk-rust-grpc"
+documentation = "https://docs.rs/sz-sdk-rust-grpc"
 authors = ["Michael Dockter <michael@dockter.com>"]
+keywords = ["senzing", "grpc", "entity-resolution", "sdk"]
+categories = ["api-bindings", "network-programming"]
+readme = "README.md"
+exclude = [".github/", "Makefile", "examples/"]
+
+[features]
+default = []
+serde = ["dep:serde"]
+tracing = ["dep:tracing"]
 
 [dependencies]
 sz-sdk = { git = "https://github.com/docktermj/sz-sdk-rust.git", branch = "1-docktermj-1" }
 tonic = { version = "0.12", features = ["tls"] }
 prost = "0.13"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde = { version = "1", features = ["derive"], optional = true }
+tracing = { version = "0.1", optional = true }
 
 [build-dependencies]
 tonic-build = "0.12"
@@ -24,3 +37,4 @@ sz-sdk = { path = "../sz-sdk-rust" }
 [dev-dependencies]
 ctor = "0.6.3"
 serial_test = "3.3.1"
+static_assertions = "1"
