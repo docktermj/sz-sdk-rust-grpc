@@ -1,7 +1,7 @@
 //! Error handling patterns for the Senzing gRPC SDK.
 //!
-//! Demonstrates idiomatic Rust error handling with `SzError` variants:
-//! matching specific error types, retry logic for transient failures,
+//! Demonstrates idiomatic Rust error handling with `SzError`:
+//! matching specific error kinds, retry logic for transient failures,
 //! and graceful degradation.
 //!
 //! # Prerequisites
@@ -28,8 +28,8 @@ fn main() {
     println!("1. Connection error handling");
     let factory = match SzAbstractFactoryGrpc::new_from_url(&grpc_url) {
         Ok(f) => f,
-        Err(SzError::BadInput { message, .. }) => {
-            eprintln!("Invalid URL: {message}");
+        Err(ref e) if e.is_bad_input() => {
+            eprintln!("Invalid URL: {e}");
             return;
         }
         Err(e) => {
@@ -45,11 +45,11 @@ fn main() {
     let record = r#"{"DATA_SOURCE": "BOGUS_SOURCE", "RECORD_ID": "1"}"#;
     match engine.add_record("BOGUS_SOURCE", "1", record, 0) {
         Ok(_) => println!("   Record added (unexpected)"),
-        Err(SzError::UnknownDataSource { message, .. }) => {
-            println!("   Caught UnknownDataSource: {message}");
+        Err(ref e) if e.is_unknown_data_source() => {
+            println!("   Caught UnknownDataSource: {e}");
         }
-        Err(SzError::BadInput { message, .. }) => {
-            println!("   Caught BadInput: {message}");
+        Err(ref e) if e.is_bad_input() => {
+            println!("   Caught BadInput: {e}");
         }
         Err(e) => {
             println!("   Unexpected error: {e}");
@@ -60,8 +60,8 @@ fn main() {
     println!("\n3. Handling entity not found");
     match engine.get_entity_by_entity_id(-999, 0) {
         Ok(json) => println!("   Found entity: {json}"),
-        Err(SzError::NotFound { message, .. }) => {
-            println!("   Entity not found (expected): {message}");
+        Err(ref e) if e.is_not_found() => {
+            println!("   Entity not found (expected): {e}");
         }
         Err(e) => {
             println!("   Other error: {e}");
@@ -82,8 +82,8 @@ fn main() {
     factory2.close().unwrap();
     match factory2.create_engine() {
         Ok(_) => println!("   Created engine (unexpected)"),
-        Err(SzError::NotInitialized { message, .. }) => {
-            println!("   Factory closed (expected): {message}");
+        Err(ref e) if e.is_not_initialized() => {
+            println!("   Factory closed (expected): {e}");
         }
         Err(e) => {
             println!("   Unexpected error: {e}");
@@ -95,8 +95,8 @@ fn main() {
 
 /// Retries a fallible operation with exponential backoff.
 ///
-/// Only retries on `DatabaseTransient` or `RetryTimeoutExceeded` errors.
-/// All other errors are returned immediately.
+/// Only retries on retryable errors (DatabaseTransient, DatabaseConnectionLost,
+/// RetryTimeoutExceeded). All other errors are returned immediately.
 fn retry_with_backoff<T, F>(max_attempts: u32, mut operation: F) -> Result<T, SzError>
 where
     F: FnMut() -> Result<T, SzError>,
@@ -106,7 +106,7 @@ where
         attempt += 1;
         match operation() {
             Ok(value) => return Ok(value),
-            Err(e) if is_retryable(&e) && attempt < max_attempts => {
+            Err(e) if e.is_retryable() && attempt < max_attempts => {
                 let delay = std::time::Duration::from_millis(100 * 2u64.pow(attempt - 1));
                 println!(
                     "   Attempt {attempt}/{max_attempts} failed (retryable), waiting {delay:?}"
@@ -116,14 +116,4 @@ where
             Err(e) => return Err(e),
         }
     }
-}
-
-/// Returns `true` for error variants that are safe to retry.
-fn is_retryable(err: &SzError) -> bool {
-    matches!(
-        err,
-        SzError::DatabaseTransient { .. }
-            | SzError::RetryTimeoutExceeded { .. }
-            | SzError::DatabaseConnectionLost { .. }
-    )
 }

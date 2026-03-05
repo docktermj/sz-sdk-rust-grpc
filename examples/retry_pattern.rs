@@ -1,9 +1,9 @@
 //! Retry pattern example: demonstrate automatic retry with exponential
 //! backoff for transient Senzing errors.
 //!
-//! Uses [`sz_sdk_rust_grpc::is_retryable`] to decide whether a failed
-//! operation should be retried. Transient errors (deadlocks, lost
-//! connections, retry timeouts) are retried with exponential backoff
+//! Uses [`SzError::is_retryable`](sz_sdk::SzError::is_retryable) to decide
+//! whether a failed operation should be retried. Transient errors (deadlocks,
+//! lost connections, retry timeouts) are retried with exponential backoff
 //! and jitter, while permanent errors (bad input, not found) fail
 //! immediately.
 //!
@@ -24,7 +24,7 @@ use std::thread;
 use std::time::Duration;
 
 use sz_sdk::SzEngine;
-use sz_sdk_rust_grpc::{is_retryable, SzAbstractFactoryGrpc, SzEngineGrpc};
+use sz_sdk_rust_grpc::{SzAbstractFactoryGrpc, SzEngineGrpc};
 
 /// Retry configuration.
 const MAX_RETRIES: u32 = 5;
@@ -48,7 +48,7 @@ where
                 }
                 return Ok(value);
             }
-            Err(err) if is_retryable(&err) && attempt < MAX_RETRIES => {
+            Err(err) if err.is_retryable() && attempt < MAX_RETRIES => {
                 attempt += 1;
                 // Exponential backoff: base * 2^attempt, capped at MAX_DELAY.
                 let backoff = BASE_DELAY
@@ -65,7 +65,7 @@ where
                 thread::sleep(delay);
             }
             Err(err) => {
-                if !is_retryable(&err) {
+                if !err.is_retryable() {
                     println!("  {operation_name}: permanent error (not retryable): {err}");
                 } else {
                     println!("  {operation_name}: giving up after {attempt} retries: {err}");
@@ -114,7 +114,7 @@ fn main() {
         Err(err) => println!(
             "   Correctly failed immediately: {} (retryable={})\n",
             err,
-            is_retryable(err)
+            err.is_retryable()
         ),
     }
 

@@ -167,10 +167,9 @@ fn test_add_record_bad_data_source() {
     // The record JSON embeds DATA_SOURCE: "CUSTOMERS" which conflicts with
     // the BAD_DATA_SOURCE_CODE parameter, producing BadInput (SENZ0023).
     assert!(
-        matches!(
-            result,
-            Err(SzError::BadInput { .. } | SzError::UnknownDataSource { .. })
-        ),
+        result
+            .as_ref()
+            .is_err_and(|e| e.is_bad_input()),
         "expected BadInput or UnknownDataSource, got: {result:?}"
     );
 }
@@ -181,7 +180,7 @@ fn test_add_record_bad_record_definition() {
     let mut engine = get_szengine();
     let result = engine.add_record("CUSTOMERS", "9999", BAD_RECORD_DEFINITION, SZ_WITHOUT_INFO);
     assert!(
-        matches!(result, Err(SzError::BadInput { .. })),
+        result.as_ref().is_err_and(|e| e.is_bad_input()),
         "expected BadInput, got: {result:?}"
     );
 }
@@ -192,7 +191,7 @@ fn test_delete_record_bad_data_source() {
     let mut engine = get_szengine();
     let result = engine.delete_record(BAD_DATA_SOURCE_CODE, "1001", SZ_WITHOUT_INFO);
     assert!(
-        matches!(result, Err(SzError::UnknownDataSource { .. })),
+        result.as_ref().is_err_and(|e| e.is_unknown_data_source()),
         "expected UnknownDataSource, got: {result:?}"
     );
 }
@@ -217,7 +216,7 @@ fn test_get_record_bad_data_source() {
     let engine = get_szengine();
     let result = engine.get_record(BAD_DATA_SOURCE_CODE, "1001", SZ_NO_FLAGS);
     assert!(
-        matches!(result, Err(SzError::UnknownDataSource { .. })),
+        result.as_ref().is_err_and(|e| e.is_unknown_data_source()),
         "expected UnknownDataSource, got: {result:?}"
     );
 }
@@ -238,7 +237,7 @@ fn test_get_entity_by_record_id_bad_data_source() {
     let engine = get_szengine();
     let result = engine.get_entity_by_record_id(BAD_DATA_SOURCE_CODE, "1001", SZ_NO_FLAGS);
     assert!(
-        matches!(result, Err(SzError::UnknownDataSource { .. })),
+        result.as_ref().is_err_and(|e| e.is_unknown_data_source()),
         "expected UnknownDataSource, got: {result:?}"
     );
 }
@@ -260,7 +259,7 @@ fn test_get_entity_by_entity_id_bad_entity_id() {
     let engine = get_szengine();
     let result = engine.get_entity_by_entity_id(BAD_ENTITY_ID, SZ_NO_FLAGS);
     assert!(
-        matches!(result, Err(SzError::NotFound { .. })),
+        result.as_ref().is_err_and(|e| e.is_not_found()),
         "expected NotFound, got: {result:?}"
     );
 }
@@ -694,7 +693,7 @@ fn test_why_record_in_entity_bad_data_source() {
     let engine = get_szengine();
     let result = engine.why_record_in_entity(BAD_DATA_SOURCE_CODE, "1001", SZ_NO_FLAGS);
     assert!(
-        matches!(result, Err(SzError::UnknownDataSource { .. })),
+        result.as_ref().is_err_and(|e| e.is_unknown_data_source()),
         "expected UnknownDataSource, got: {result:?}"
     );
 }
@@ -706,7 +705,7 @@ fn test_search_by_attributes_bad_json() {
     let engine = get_szengine();
     let result = engine.search_by_attributes("}{not json", SZ_NO_SEARCH_PROFILE, SZ_NO_FLAGS);
     assert!(
-        matches!(result, Err(SzError::BadInput { .. })),
+        result.as_ref().is_err_and(|e| e.is_bad_input()),
         "expected BadInput for malformed attributes, got: {result:?}"
     );
 }
@@ -725,7 +724,7 @@ fn test_find_path_by_entity_id_bad_entity_ids() {
         SZ_NO_FLAGS,
     );
     assert!(
-        matches!(result, Err(SzError::NotFound { .. })),
+        result.as_ref().is_err_and(|e| e.is_not_found()),
         "expected NotFound for bad entity IDs, got: {result:?}"
     );
 }
@@ -758,7 +757,7 @@ fn test_find_path_by_record_id_bad_data_source() {
         SZ_NO_FLAGS,
     );
     assert!(
-        matches!(result, Err(SzError::UnknownDataSource { .. })),
+        result.as_ref().is_err_and(|e| e.is_unknown_data_source()),
         "expected UnknownDataSource, got: {result:?}"
     );
 }
@@ -973,7 +972,7 @@ fn test_get_entities_by_record_ids_bad_data_source() {
     let record_ids = &[(BAD_DATA_SOURCE_CODE, "1001")];
     let result = engine.get_entities_by_record_ids(record_ids, SZ_NO_FLAGS);
     assert!(
-        matches!(result, Err(SzError::UnknownDataSource { .. })),
+        result.as_ref().is_err_and(|e| e.is_unknown_data_source()),
         "expected UnknownDataSource, got: {result:?}"
     );
 }
@@ -1083,7 +1082,7 @@ fn test_lookup_entity_id_bad_data_source() {
     let engine = get_szengine();
     let result = engine.lookup_entity_id(BAD_DATA_SOURCE_CODE, "1001", SZ_NO_FLAGS);
     assert!(
-        matches!(result, Err(SzError::UnknownDataSource { .. })),
+        result.as_ref().is_err_and(|e| e.is_unknown_data_source()),
         "expected UnknownDataSource, got: {result:?}"
     );
 }
@@ -1210,13 +1209,7 @@ fn test_stream_export_csv_valid_output() {
 fn test_batch_result_display() {
     let result = super::BatchResult {
         successes: 3,
-        errors: vec![(
-            "bad".to_string(),
-            SzError::General {
-                code: 0,
-                message: "test".to_string(),
-            },
-        )],
+        errors: vec![("bad".to_string(), SzError::general("test"))],
     };
     assert_eq!(format!("{result}"), "3 succeeded, 1 failed");
 }
@@ -1261,7 +1254,7 @@ fn test_get_entities_by_entity_ids_bad_id() {
     let engine = get_szengine();
     let result = engine.get_entities_by_entity_ids(&[BAD_ENTITY_ID], SZ_NO_FLAGS);
     assert!(
-        matches!(result, Err(SzError::NotFound { .. })),
+        result.as_ref().is_err_and(|e| e.is_not_found()),
         "expected NotFound, got: {result:?}"
     );
 }
@@ -1312,7 +1305,7 @@ fn test_search_and_resolve_bad_json() {
     let engine = get_szengine();
     let result = engine.search_and_resolve("}{bad", SZ_NO_SEARCH_PROFILE, SZ_NO_FLAGS);
     assert!(
-        matches!(result, Err(SzError::BadInput { .. })),
+        result.as_ref().is_err_and(|e| e.is_bad_input()),
         "expected BadInput for malformed attributes, got: {result:?}"
     );
 }
@@ -1411,20 +1404,8 @@ fn test_batch_result_total_with_data() {
     let result = BatchResult {
         successes: 5,
         errors: vec![
-            (
-                "rec1".to_string(),
-                SzError::BadInput {
-                    code: 23,
-                    message: "bad".to_string(),
-                },
-            ),
-            (
-                "rec2".to_string(),
-                SzError::NotFound {
-                    code: 33,
-                    message: "missing".to_string(),
-                },
-            ),
+            ("rec1".to_string(), SzError::bad_input("bad").with_code(23)),
+            ("rec2".to_string(), SzError::not_found("missing").with_code(33)),
         ],
     };
     assert_eq!(result.total(), 7);
@@ -1435,20 +1416,8 @@ fn test_batch_result_into_iterator() {
     let result = BatchResult {
         successes: 2,
         errors: vec![
-            (
-                "rec1".to_string(),
-                SzError::BadInput {
-                    code: 23,
-                    message: "bad".to_string(),
-                },
-            ),
-            (
-                "rec2".to_string(),
-                SzError::NotFound {
-                    code: 33,
-                    message: "missing".to_string(),
-                },
-            ),
+            ("rec1".to_string(), SzError::bad_input("bad").with_code(23)),
+            ("rec2".to_string(), SzError::not_found("missing").with_code(33)),
         ],
     };
     let collected: Vec<_> = result.into_iter().collect();
@@ -1627,9 +1596,9 @@ fn test_batch_result_retryable_errors() {
     let result = BatchResult {
         successes: 1,
         errors: vec![
-            ("rec1".to_string(), SzError::BadInput { code: 23, message: "bad".into() }),
-            ("rec2".to_string(), SzError::DatabaseTransient { code: 1008, message: "deadlock".into() }),
-            ("rec3".to_string(), SzError::NotFound { code: 33, message: "gone".into() }),
+            ("rec1".to_string(), SzError::bad_input("bad").with_code(23)),
+            ("rec2".to_string(), SzError::database_transient("deadlock").with_code(1008)),
+            ("rec3".to_string(), SzError::not_found("gone").with_code(33)),
         ],
     };
     let retryable = result.retryable_errors();
@@ -1651,8 +1620,8 @@ fn test_batch_result_failed_record_ids() {
     let result = BatchResult {
         successes: 1,
         errors: vec![
-            ("rec_a".to_string(), SzError::BadInput { code: 23, message: "bad".into() }),
-            ("rec_b".to_string(), SzError::NotFound { code: 33, message: "gone".into() }),
+            ("rec_a".to_string(), SzError::bad_input("bad").with_code(23)),
+            ("rec_b".to_string(), SzError::not_found("gone").with_code(33)),
         ],
     };
     assert_eq!(result.failed_record_ids(), vec!["rec_a", "rec_b"]);
@@ -1676,7 +1645,7 @@ fn test_batch_result_success_rate_partial() {
     let result = BatchResult {
         successes: 3,
         errors: vec![
-            ("r1".into(), SzError::BadInput { code: 23, message: "bad".into() }),
+            ("r1".into(), SzError::bad_input("bad").with_code(23)),
         ],
     };
     assert!((result.success_rate() - 0.75).abs() < f64::EPSILON);
@@ -1694,8 +1663,8 @@ fn test_redo_summary_success_rate() {
         processed: 8,
         failed: 2,
         errors: vec![
-            SzError::General { code: 0, message: "err1".into() },
-            SzError::General { code: 0, message: "err2".into() },
+            SzError::general("err1"),
+            SzError::general("err2"),
         ],
     };
     assert!((summary.success_rate() - 0.8).abs() < f64::EPSILON);

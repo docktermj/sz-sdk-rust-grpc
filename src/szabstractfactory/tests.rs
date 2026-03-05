@@ -165,10 +165,7 @@ fn test_invalid_url_scheme() {
     let result = SzAbstractFactoryGrpc::new_from_url("ftp://localhost:8261");
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(
-        matches!(err, sz_sdk::SzError::BadInput { .. }),
-        "expected BadInput, got {err:?}"
-    );
+    assert!(err.is_bad_input(), "expected BadInput, got {err:?}");
 }
 
 #[test]
@@ -239,7 +236,7 @@ fn test_builder_missing_url() {
     let result = SzAbstractFactoryGrpc::builder().build();
     assert!(result.is_err());
     assert!(
-        matches!(result.unwrap_err(), sz_sdk::SzError::BadInput { .. }),
+        result.unwrap_err().is_bad_input(),
         "expected BadInput for missing URL"
     );
 }

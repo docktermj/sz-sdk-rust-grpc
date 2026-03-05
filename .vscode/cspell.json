@@ -14,7 +14,6 @@
     "szconfigmanager",
     "szdiagnostic",
     "szengine",
-    "szerrortypes",
     "szproduct",
     "SZSDK",
     "Truthset",

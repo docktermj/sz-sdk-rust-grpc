@@ -127,7 +127,7 @@
 //! When an RPC fails, the returned [`sz_sdk::SzError`] variant indicates
 //! whether retrying is appropriate:
 //!
-//! | Variant | Retryable? | Notes |
+//! | Kind | Retryable? | Notes |
 //! |---------|-----------|-------|
 //! | `DatabaseTransient` | **Yes** | Deadlock or lock timeout — retry with backoff |
 //! | `DatabaseConnectionLost` | **Yes** | Connection dropped — tonic will reconnect automatically, retry the RPC |
@@ -153,7 +153,7 @@
 //! Call [`close()`](sz_sdk::SzAbstractFactory::close) on the factory when
 //! you are done. After `close()`:
 //!
-//! - New `create_*()` calls return `SzError::NotInitialized`.
+//! - New `create_*()` calls return an `SzError` with kind `NotInitialized`.
 //! - Already-created service clients (engines, products, etc.) remain usable
 //!   — they hold their own channel clone and are not affected by `close()`.
 //! - `close()` is idempotent and can be called multiple times safely.
@@ -203,7 +203,6 @@ pub mod szengine;
 pub mod szproduct;
 
 mod runtime;
-mod szerrortypes;
 
 pub use szabstractfactory::{
     GrpcConnectionConfig, GrpcUrl, SzAbstractFactoryBuilder, SzAbstractFactoryGrpc,
@@ -224,11 +223,80 @@ pub use szengine::StreamExportChunk;
 pub use szengine::StreamingExportIterator;
 pub use szengine::SzEngineGrpc;
 pub use szengine::SZ_CSV_DEFAULT_COLUMNS;
-pub use szerrortypes::is_retryable;
-pub use szerrortypes::with_retry;
 pub use szproduct::LicenseInfo;
 pub use szproduct::SzProductGrpc;
 pub use szproduct::VersionInfo;
+
+/// Executes a fallible operation with automatic retry for transient errors.
+///
+/// When the operation returns a retryable error (as determined by
+/// [`SzError::is_retryable`](sz_sdk::SzError::is_retryable)), it is retried up to `max_attempts - 1` additional
+/// times with exponential backoff and jitter. Non-retryable errors are
+/// returned immediately.
+///
+/// # Arguments
+///
+/// * `max_attempts` — Total number of attempts (including the first). Must be ≥ 1.
+/// * `base_delay` — Initial delay between retries. Doubles on each subsequent attempt.
+/// * `f` — The operation to attempt. Called repeatedly until it succeeds, fails
+///   with a non-retryable error, or exhausts all attempts.
+///
+/// # Example
+///
+/// ```
+/// use std::time::Duration;
+/// use sz_sdk::SzError;
+/// use sz_sdk_rust_grpc::with_retry;
+///
+/// let mut calls = 0;
+/// let result = with_retry(3, Duration::from_millis(1), || {
+///     calls += 1;
+///     if calls < 3 {
+///         Err(SzError::database_transient("deadlock").with_code(1008))
+///     } else {
+///         Ok("done")
+///     }
+/// });
+/// assert_eq!(result.unwrap(), "done");
+/// assert_eq!(calls, 3);
+/// ```
+pub fn with_retry<F, T>(
+    max_attempts: u32,
+    base_delay: std::time::Duration,
+    mut f: F,
+) -> Result<T, sz_sdk::SzError>
+where
+    F: FnMut() -> Result<T, sz_sdk::SzError>,
+{
+    let max_delay = std::time::Duration::from_secs(30);
+    let max_retries = max_attempts.saturating_sub(1);
+
+    for attempt in 0..max_attempts {
+        match f() {
+            Ok(value) => return Ok(value),
+            Err(err) if err.is_retryable() && attempt < max_retries => {
+                let backoff = base_delay
+                    .saturating_mul(1 << attempt.min(10))
+                    .min(max_delay);
+                // Add jitter: up to 25% of the backoff.
+                let jitter_ms = (backoff.as_millis() as u64 / 4).max(1);
+                let jitter = std::time::Duration::from_millis(simple_jitter_nanos() % jitter_ms);
+                std::thread::sleep(backoff + jitter);
+            }
+            Err(err) => return Err(err),
+        }
+    }
+    // Unreachable: the loop always returns.
+    unreachable!()
+}
+
+/// Simple jitter source using system clock nanoseconds (no external deps).
+fn simple_jitter_nanos() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::SystemTime::UNIX_EPOCH)
+        .unwrap_or_default()
+        .subsec_nanos() as u64
+}
 
 #[cfg(test)]
 mod assert_traits {

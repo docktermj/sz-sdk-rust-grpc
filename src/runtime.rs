@@ -24,10 +24,7 @@ pub(crate) fn try_runtime() -> Result<&'static Runtime, SzError> {
     });
     match result {
         Ok(rt) => Ok(rt),
-        Err(msg) => Err(SzError::General {
-            code: 0,
-            message: msg.clone(),
-        }),
+        Err(msg) => Err(SzError::general(msg.clone())),
     }
 }
 
@@ -61,7 +58,7 @@ pub(crate) fn runtime() -> &'static Runtime {
 pub(crate) fn grpc_to_sz_error(status: tonic::Status, method: &str) -> SzError {
     let message = status.message().to_string();
     if let Some(code) = parse_senzing_error_code(&message) {
-        return crate::szerrortypes::sz_error_from_code(code, message);
+        return SzError::new(message).with_code(code as i64);
     }
     // Fallback: gRPC error without a Senzing-specific error code.
     #[cfg(feature = "tracing")]
@@ -71,10 +68,12 @@ pub(crate) fn grpc_to_sz_error(status: tonic::Status, method: &str) -> SzError {
         raw_message = %message,
         "could not parse Senzing error code from gRPC status"
     );
-    SzError::General {
-        code: 0,
-        message: format!("gRPC {} failed ({}): {}", method, status.code(), message),
-    }
+    SzError::general(format!(
+        "gRPC {} failed ({}): {}",
+        method,
+        status.code(),
+        message
+    ))
 }
 
 /// Attempts to extract a Senzing error code from a gRPC error message.
@@ -133,10 +132,7 @@ fn extract_reason(value: &serde_json::Value) -> Option<&str> {
 /// serde_json::from_str(&json).map_err(|e| json_parse_error("entity", e))?;
 /// ```
 pub(crate) fn json_parse_error(context: &str, err: serde_json::Error) -> SzError {
-    SzError::General {
-        code: 0,
-        message: format!("failed to parse {context} JSON: {err}"),
-    }
+    SzError::general(format!("failed to parse {context} JSON: {err}"))
 }
 
 /// Converts a [`std::io::Error`] into an `SzError::General` with a
@@ -150,10 +146,7 @@ pub(crate) fn json_parse_error(context: &str, err: serde_json::Error) -> SzError
 /// File::create(path).map_err(|e| io_error("create export file", e))?;
 /// ```
 pub(crate) fn io_error(context: &str, err: std::io::Error) -> SzError {
-    SzError::General {
-        code: 0,
-        message: format!("failed to {context}: {err}"),
-    }
+    SzError::general(format!("failed to {context}: {err}"))
 }
 
 #[cfg(test)]
@@ -208,34 +201,26 @@ mod tests {
             r#"{"id":"test","reason":"SENZ2207E|Data source code [BOGUS] does not exist."}"#,
         );
         let err = grpc_to_sz_error(status, "add_record");
-        assert!(matches!(err, SzError::UnknownDataSource { .. }));
+        assert!(err.is_unknown_data_source());
     }
 
     #[test]
     fn test_json_parse_error() {
         let err: serde_json::Error = serde_json::from_str::<serde_json::Value>("}{").unwrap_err();
         let sz_err = json_parse_error("entity", err);
-        match &sz_err {
-            SzError::General { code, message } => {
-                assert_eq!(*code, 0);
-                assert!(message.contains("entity"));
-                assert!(message.contains("JSON"));
-            }
-            _ => panic!("expected SzError::General, got {sz_err:?}"),
-        }
+        assert!(sz_err.is_general());
+        assert!(sz_err.code().is_none());
+        assert!(sz_err.message().contains("entity"));
+        assert!(sz_err.message().contains("JSON"));
     }
 
     #[test]
     fn test_grpc_to_sz_error_fallback() {
         let status = tonic::Status::not_found("no such thing");
         let err = grpc_to_sz_error(status, "get_entity");
-        match &err {
-            SzError::General { code, message } => {
-                assert_eq!(*code, 0);
-                assert!(message.contains("get_entity"));
-                assert!(message.contains("no such thing"));
-            }
-            _ => panic!("expected SzError::General, got {err:?}"),
-        }
+        assert!(err.is_general());
+        assert!(err.code().is_none());
+        assert!(err.message().contains("get_entity"));
+        assert!(err.message().contains("no such thing"));
     }
 }

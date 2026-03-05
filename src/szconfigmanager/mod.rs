@@ -213,7 +213,7 @@ impl sz_sdk::SzConfigManager for SzConfigManagerGrpc {
 
     /// Atomically replaces the default config ID using compare-and-swap.
     ///
-    /// Returns [`SzError::ReplaceConflict`] if `current_default_config_id`
+    /// Returns an error with kind [`ReplaceConflict`](sz_sdk::SzErrorKind::ReplaceConflict) if `current_default_config_id`
     /// no longer matches the actual default (concurrent modification).
     fn replace_default_config_id(
         &mut self,

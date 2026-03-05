@@ -102,44 +102,33 @@ impl GrpcConnectionConfig {
     ///   ping would time out before the next one fires)
     pub fn validate(&self) -> Result<(), SzError> {
         if self.connect_timeout.is_zero() {
-            return Err(SzError::BadInput {
-                code: 0,
-                message: "connect_timeout must be greater than zero".to_string(),
-            });
+            return Err(SzError::bad_input(
+                "connect_timeout must be greater than zero",
+            ));
         }
         if self.rpc_timeout.is_zero() {
-            return Err(SzError::BadInput {
-                code: 0,
-                message: "rpc_timeout must be greater than zero".to_string(),
-            });
+            return Err(SzError::bad_input(
+                "rpc_timeout must be greater than zero",
+            ));
         }
         if self.rpc_timeout < self.connect_timeout {
-            return Err(SzError::BadInput {
-                code: 0,
-                message: format!(
-                    "rpc_timeout ({:?}) must be >= connect_timeout ({:?})",
-                    self.rpc_timeout, self.connect_timeout
-                ),
-            });
+            return Err(SzError::bad_input(format!(
+                "rpc_timeout ({:?}) must be >= connect_timeout ({:?})",
+                self.rpc_timeout, self.connect_timeout
+            )));
         }
         if let Some(interval) = self.keepalive_interval {
             if self.keepalive_timeout.is_zero() {
-                return Err(SzError::BadInput {
-                    code: 0,
-                    message:
-                        "keepalive_timeout must be greater than zero when keepalive is enabled"
-                            .to_string(),
-                });
+                return Err(SzError::bad_input(
+                    "keepalive_timeout must be greater than zero when keepalive is enabled",
+                ));
             }
             if interval <= self.keepalive_timeout {
-                return Err(SzError::BadInput {
-                    code: 0,
-                    message: format!(
-                        "keepalive_interval ({interval:?}) must be greater than \
-                         keepalive_timeout ({:?})",
-                        self.keepalive_timeout
-                    ),
-                });
+                return Err(SzError::bad_input(format!(
+                    "keepalive_interval ({interval:?}) must be greater than \
+                     keepalive_timeout ({:?})",
+                    self.keepalive_timeout
+                )));
             }
         }
         Ok(())
@@ -185,10 +174,9 @@ impl TryFrom<&str> for GrpcUrl {
 
     fn try_from(url: &str) -> Result<Self, Self::Error> {
         if !url.starts_with("http://") && !url.starts_with("https://") {
-            return Err(SzError::BadInput {
-                code: 0,
-                message: format!("gRPC URL must use http:// or https:// scheme (got: {url})"),
-            });
+            return Err(SzError::bad_input(format!(
+                "gRPC URL must use http:// or https:// scheme (got: {url})"
+            )));
         }
         Ok(Self(url.to_string()))
     }
@@ -314,10 +302,7 @@ impl SzAbstractFactoryGrpc {
         config.validate()?;
         let channel = try_runtime()?.block_on(async {
             let mut endpoint = Channel::from_shared(url.0)
-                .map_err(|e| SzError::General {
-                    code: 0,
-                    message: format!("invalid gRPC URL: {e}"),
-                })?
+                .map_err(|e| SzError::general(format!("invalid gRPC URL: {e}")))?
                 .connect_timeout(config.connect_timeout)
                 .timeout(config.rpc_timeout);
             if let Some(interval) = config.keepalive_interval {
@@ -329,15 +314,12 @@ impl SzAbstractFactoryGrpc {
             if let Some(tls_config) = tls {
                 endpoint = endpoint
                     .tls_config(tls_config)
-                    .map_err(|e| SzError::General {
-                        code: 0,
-                        message: format!("invalid TLS configuration: {e}"),
-                    })?;
+                    .map_err(|e| SzError::general(format!("invalid TLS configuration: {e}")))?;
             }
-            endpoint.connect().await.map_err(|e| SzError::General {
-                code: 0,
-                message: format!("failed to connect to gRPC server: {e}"),
-            })
+            endpoint
+                .connect()
+                .await
+                .map_err(|e| SzError::general(format!("failed to connect to gRPC server: {e}")))
         })?;
         Ok(Self {
             channel,
@@ -430,10 +412,9 @@ impl From<Channel> for SzAbstractFactoryGrpc {
 impl SzAbstractFactoryGrpc {
     fn check_closed(&self) -> Result<(), SzError> {
         if self.closed {
-            return Err(SzError::NotInitialized {
-                code: 0,
-                message: "SzAbstractFactory has been closed".to_string(),
-            });
+            return Err(SzError::not_initialized(
+                "SzAbstractFactory has been closed",
+            ));
         }
         Ok(())
     }
@@ -566,19 +547,13 @@ impl SzAbstractFactoryBuilder {
     ///
     /// # Errors
     ///
-    /// Returns `SzError::BadInput` if no URL was set, and `SzError::General`
-    /// if the connection fails.
+    /// Returns an `SzError` with kind `BadInput` if no URL was set, and kind
+    /// `General` if the connection fails.
     pub fn build(self) -> Result<SzAbstractFactoryGrpc, SzError> {
         let validated = self
             .url
-            .ok_or_else(|| SzError::BadInput {
-                code: 0,
-                message: "gRPC URL is required — call .url() on the builder".to_string(),
-            })?
-            .map_err(|msg| SzError::BadInput {
-                code: 0,
-                message: msg,
-            })?;
+            .ok_or_else(|| SzError::bad_input("gRPC URL is required — call .url() on the builder"))?
+            .map_err(SzError::bad_input)?;
         SzAbstractFactoryGrpc::connect(validated, self.config, self.tls)
     }
 }

@@ -43,8 +43,8 @@ impl sz_sdk::SzEngine for SzEngineGrpc {
     /// Adds a record to the repository.
     ///
     /// Returns with-info JSON when `flags` includes `SZ_WITH_INFO`.
-    /// Returns [`SzError::UnknownDataSource`] if the data source is not registered.
-    /// Returns [`SzError::BadInput`] for malformed `record_definition`.
+    /// Returns an error with kind [`UnknownDataSource`](sz_sdk::SzErrorKind::UnknownDataSource) if the data source is not registered.
+    /// Returns an error with kind [`BadInput`](sz_sdk::SzErrorKind::BadInput) for malformed `record_definition`.
     ///
     /// # Example
     ///
@@ -304,7 +304,7 @@ impl sz_sdk::SzEngine for SzEngineGrpc {
         )
     }
 
-    /// Returns JSON for a resolved entity. Returns [`SzError::NotFound`]
+    /// Returns JSON for a resolved entity. Returns an error with kind [`NotFound`](sz_sdk::SzErrorKind::NotFound)
     /// if the entity does not exist.
     fn get_entity_by_entity_id(&self, entity_id: i64, flags: i64) -> Result<String, SzError> {
         Ok(grpc_call!(
@@ -812,7 +812,7 @@ impl BatchResult {
     pub fn retryable_errors(&self) -> Vec<&(String, SzError)> {
         self.errors
             .iter()
-            .filter(|(_, err)| crate::szerrortypes::is_retryable(err))
+            .filter(|(_, err)| err.is_retryable())
             .collect()
     }
 
@@ -1212,10 +1212,7 @@ impl SzEngineGrpc {
         json.get("RESOLVED_ENTITY")
             .and_then(|re| re.get("ENTITY_ID"))
             .and_then(|v| v.as_i64())
-            .ok_or_else(|| SzError::General {
-                code: 0,
-                message: "ENTITY_ID not found in response".to_string(),
-            })
+            .ok_or_else(|| SzError::general("ENTITY_ID not found in response"))
     }
 
     /// Searches for entities matching the given attributes and returns
@@ -1322,10 +1319,7 @@ impl SzEngineGrpc {
         let eid = resolved
             .and_then(|re| re.get("ENTITY_ID"))
             .and_then(|v| v.as_i64())
-            .ok_or_else(|| SzError::General {
-                code: 0,
-                message: "ENTITY_ID not found in entity response".to_string(),
-            })?;
+            .ok_or_else(|| SzError::general("ENTITY_ID not found in entity response"))?;
         let entity_name = resolved
             .and_then(|re| re.get("ENTITY_NAME"))
             .and_then(|v| v.as_str())
